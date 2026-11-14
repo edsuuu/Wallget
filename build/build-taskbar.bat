@@ -9,7 +9,7 @@ if not exist "%OBJ%" mkdir "%OBJ%"
 
 cl %CFLAGS% /LD /Fo"%OBJ%/" "%SRC%\taskbar\*.cpp" "%SRC%\common\*.cpp" ^
    "%SRC%\wallpaper\media.cpp" "%SRC%\wallpaper\audio.cpp" "%SRC%\wallpaper\timing.cpp" "%SRC%\wallpaper\palette.cpp" ^
-   "%SRC%\wallpaper\http.cpp" "%SRC%\wallpaper\sensors.cpp" "%SRC%\wallpaper\hwinfo.cpp" "%SRC%\wallpaper\network.cpp" ^
+   "%SRC%\wallpaper\http.cpp" "%SRC%\wallpaper\sensors.cpp" "%SRC%\wallpaper\hwinfo.cpp" ^
    /link /OUT:"%OBJ%\TemaBarra.dll" /IMPLIB:"%OBJ%\TemaBarra.lib" ^
    windowsapp.lib ole32.lib user32.lib advapi32.lib dwmapi.lib shell32.lib shcore.lib windowscodecs.lib comctl32.lib || exit /b 1
 

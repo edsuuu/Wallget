@@ -2,7 +2,6 @@
 #include "common/log.h"
 #include "common/registry.h"
 #include "common/xaml_tree.h"
-#include "wallpaper/network.h"
 #include "wallpaper/palette.h"
 #include "wallpaper/sensors.h"
 
@@ -23,9 +22,9 @@
 namespace Media = winrt::Windows::UI::Xaml::Media;
 namespace Shapes = winrt::Windows::UI::Xaml::Shapes;
 
-// Anéis de CPU, RAM, GPU e rede na barra, à esquerda da bandeja, como os do papel de parede em miniatura: anel com a %
-// dentro e, ao lado, o nome e a temperatura (ou os GB, ou ↓/↑ na rede). Com a bandeja cheia de ícones e sem espaço para
-// os quatro, a rede sai; sem espaço nem para três, somem. Não pausa em jogo de tela cheia (pedido dele).
+// Anéis de CPU, RAM e GPU na barra (sem a rede: pedido dele), à esquerda da bandeja, como os do papel de parede em
+// miniatura: anel com a % dentro e, ao lado, o nome e a temperatura (ou os GB). Sem espaço para os três (bandeja cheia),
+// somem. Não pausa em jogo de tela cheia (pedido dele).
 constexpr double kRing = 32, kThickness = 2.5, kSide = 42, kInnerGap = 5, kSpacing = 8, kEdgeGap = 8;
 constexpr double kItem = kRing + kInnerGap + kSide;
 
@@ -37,22 +36,21 @@ struct Gauge {
 
 struct StatsPanel {
     Controls::StackPanel root{nullptr};
-    Gauge gauges[4];
+    Gauge gauges[3];
     winrt::weak_ref<FrameworkElement> tray;
     double margin = -1;
     bool gone = false;
 };
 
 struct Reading {
-    double percents[4]{};
-    std::wstring tops[4] = {L"CPU", L"RAM", L"GPU", L""}, bottoms[4];
+    double percents[3]{};
+    std::wstring bottoms[3];
 };
 
 // Tudo na thread do XAML da barra (as barras de todos os monitores dividem a mesma).
 static thread_local std::vector<std::shared_ptr<StatsPanel>> g_panels;
 static thread_local DispatcherTimer g_timer{nullptr};
 static thread_local std::unique_ptr<SystemStats> g_stats;
-static thread_local NetworkMeter g_network;
 static thread_local Reading g_reading;
 static thread_local int g_ticks, g_palette = -1;
 static thread_local bool g_enabled = true;
@@ -129,11 +127,10 @@ static void SetPercent(Shapes::Ellipse const& arc, double percent) {
 }
 
 static void ShowReading(StatsPanel& p) {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 3; i++) {
         auto& g = p.gauges[i];
         SetPercent(g.arc, g_reading.percents[i]);
-        SetText(g.value, i < 3 ? std::to_wstring(lround(g_reading.percents[i])) + L"%" : L"Mbps");
-        SetText(g.top, g_reading.tops[i]);
+        SetText(g.value, std::to_wstring(lround(g_reading.percents[i])) + L"%");
         SetText(g.bottom, g_reading.bottoms[i]);
     }
 }
@@ -148,7 +145,12 @@ static std::shared_ptr<StatsPanel> MakePanel() {
     p->root.VerticalAlignment(VerticalAlignment::Center);
     p->root.IsHitTestVisible(false);  // a barra continua recebendo o clique direito ali
     p->root.Visibility(Visibility::Collapsed);
-    for (auto& g : p->gauges) p->root.Children().Append((g = MakeGauge()).root);
+    const wchar_t* names[3] = {L"CPU", L"RAM", L"GPU"};
+    for (int i = 0; i < 3; i++) {
+        p->gauges[i] = MakeGauge();
+        p->gauges[i].top.Text(names[i]);
+        p->root.Children().Append(p->gauges[i].root);
+    }
     ShowReading(*p);
 
     std::weak_ptr<StatsPanel> weak = p;
@@ -218,12 +220,9 @@ static void Read() {
     g_reading.percents[0] = g_stats->cpu;
     g_reading.percents[1] = g_stats->ram;
     g_reading.percents[2] = g_stats->gpu;
-    g_reading.percents[3] = g_network.Read();
     g_reading.bottoms[0] = temperature(g_stats->cpuTemperature);
     g_reading.bottoms[1] = ram;
     g_reading.bottoms[2] = temperature(g_stats->gpuTemperature);
-    g_reading.tops[3] = g_network.down;
-    g_reading.bottoms[3] = g_network.up;
 }
 
 // A cada 250 ms acerta o lugar e quantos anéis cabem entre o último app e a bandeja; a cada segundo lê os sensores.
@@ -238,10 +237,9 @@ static void Tick() {
         if (!grid) continue;
 
         double tray = TrayLeft(*p, grid), room = tray - ButtonsRight(grid) - 2 * kEdgeGap;
-        int count = !g_enabled ? 0 : room >= 4 * kItem + 3 * kSpacing ? 4 : room >= 3 * kItem + 2 * kSpacing ? 3 : 0;
-        p->gauges[3].root.Visibility(count == 4 ? Visibility::Visible : Visibility::Collapsed);
-        p->root.Visibility(count ? Visibility::Visible : Visibility::Collapsed);
-        if (!count) continue;
+        bool fits = g_enabled && room >= 3 * kItem + 2 * kSpacing;
+        p->root.Visibility(fits ? Visibility::Visible : Visibility::Collapsed);
+        if (!fits) continue;
 
         double margin = std::max(0.0, grid.ActualWidth() - tray + kEdgeGap);
         if (margin != p->margin) p->root.Margin({0, 0, p->margin = margin, 0});
