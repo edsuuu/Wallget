@@ -53,7 +53,9 @@ Os programas acham `assets\`, `cache\` e `logs\` a partir da pasta acima de `bin
   no app); pausada, fica parada e o player continua. Sem espaço antes do Iniciar, primeiro sai a onda e depois fica a
   versão compacta (capa, nome, artista e tocar/pausar). Some com o Spotify fechado; em jogo de tela cheia continua.
   É XAML montado dentro da barra, no `Grid` da `TaskbarFrame`; a mãozinha dos botões vem de um subclass na janela da
-  ilha XAML de cada barra.
+  ilha XAML de cada barra. Anéis de CPU, RAM, GPU e rede (as mesmas leituras do FundoVivo) à esquerda da bandeja, em
+  cada monitor; com a bandeja cheia a rede sai e, sem espaço nem para três, somem. Não pausam em jogo de tela cheia
+  (`Desempenho` = 0 desliga).
 - **TemaMenus** — vidro liso no Iniciar, pesquisa, Configurações Rápidas e notificações; Iniciar no estilo do conceito
   (barra lateral com os botões nativos de conta/energia, Início/Apps/Criar, pastas na largura toda, lupa com degradê).
   Nas Configurações Rápidas: barra de tempo da música no cartão de mídia (só leitura, atualiza só com o painel aberto),
