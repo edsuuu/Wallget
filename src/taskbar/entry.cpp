@@ -29,6 +29,7 @@ static void StartRefreshTimer() {
             RefreshBlurBackground();
             RefreshStartLogo();
             RefreshMediaPlayer();
+            RefreshSystemStats();
         } catch (...) {
             Log(L"erro ao reler a barra: %08X", winrt::to_hresult());
         }
@@ -121,7 +122,9 @@ void OnElementAdded(ParentChildRelation const&, VisualElement const& element) {
     } else if (type == L"SearchUx.SearchUI.SearchButtonRootGrid") {
         ApplySearchWidth(FrameworkElementFromHandle(element.Handle));
     } else if (type == L"Taskbar.TaskbarFrame") {
-        ApplyNowAndOnLoad(FrameworkElementFromHandle(element.Handle), AddMediaPlayer, L"player");
+        auto frame = FrameworkElementFromHandle(element.Handle);
+        ApplyNowAndOnLoad(frame, AddMediaPlayer, L"player");
+        ApplyNowAndOnLoad(frame, AddSystemStats, L"desempenho");
     } else if (type == L"Windows.UI.Xaml.Hosting.DesktopWindowXamlSource") {
         AddTaskbarIsland(ElementFromHandle(element.Handle));
     } else if (name == L"Icon") {

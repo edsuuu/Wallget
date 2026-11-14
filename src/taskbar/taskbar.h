@@ -13,4 +13,6 @@ void ApplySearchWidth(FrameworkElement const& grid);
 void ApplyOverflowGlass(Controls::Border const& border);
 void AddMediaPlayer(FrameworkElement const& frame);
 void RefreshMediaPlayer();
+void AddSystemStats(FrameworkElement const& frame);
+void RefreshSystemStats();
 void AddTaskbarIsland(winrt::Windows::Foundation::IInspectable const& object);
